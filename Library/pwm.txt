@@ -1,0 +1,19 @@
+.subckt PWM IN GND HO HGND LO LGND PARAMS: f = 50k dt = 100n carh=1 carl=-1 outh = 5 outl = -5 del = 0
+
+V1 TRI GND PULSE({carl} {carh} {del} {Tr} {Tr} 0 {Ts})
+B1 HO HGND V=if{ V(IN) - {dt}*{f}*2 > V(TRI),{outh},{outl}}
+B2 LO LGND V=if{ V(IN) + {dt}*{f}*2 < V(TRI),{outh},{outl}}
+R1 IN GND {RI} 
+R2 HO HGND {RO}
+R3 LO LGND {RO}
+
+C1 HGND GND {C}
+C2 LGND GND {C}
+
+.param C  = 10u
+.param RI = 10Meg
+.param RO = 100k
+.param Ts = 1/{f}
+.param Tr = {Ts}/2
+
+.ends 

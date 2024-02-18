@@ -1,0 +1,18 @@
+.subckt AB_ABC Al Be GND A B C
+
+R1 A GND {RO} 
+R2 B GND {RO} 
+R3 C GND {RO} 
+
+R4 Al GND {RI}
+R5 Be GND {RI}
+
+
+B1 A GND V = V(Al) 
+B2 B GND V = ( V(Be)*SQRT(3.0) - V(Al) ) / 2.0
+B3 C GND V = (-V(Be)*SQRT(3.0) - V(Al) ) / 2.0
+
+.param RI = 10Meg
+.param RO = 100k
+
+.ends 

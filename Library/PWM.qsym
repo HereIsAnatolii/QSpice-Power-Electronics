@@ -1,0 +1,17 @@
+ÿØÿÛ«symbol PWM
+  «type: X»
+  «description: PWM WITH DEADTIME»
+  «library file: C:\Users\GBT B450M-S2H\Documents\QSPICE\MyLib\pwm.txt»
+  «shorted pins: false»
+  «rect (-500,-600) (-50,600) 0 0 0 0xff0000 0xe9e9ff -1 0 -1»
+  «rect (50,-600) (500,600) 0 0 0 0xff0000 0xe9e9ff -1 0 -1»
+  «text (0,700) 1 15 0 0x1000000 -1 -1 "X1"»
+  «text (0,500) 1 15 0 0x1000000 -1 -1 "PWM"»
+  «text (100,-800) 1 15 0 0x1000000 -1 -1 "PARAMS: f = 50k dt = 100n carh=1 carl=-1 outh = 5 outl = -5"»
+  «pin (-500,400) (20,0) 1 7 0 0x0 -1 "IN"»
+  «pin (-500,-400) (20,0) 1 7 0 0x0 -1 "GND"»
+  «pin (500,400) (-20,0) 1 11 0 0x0 -1 "HO"»
+  «pin (500,100) (-20,0) 1 11 0 0x0 -1 "HGND"»
+  «pin (500,-100) (-20,0) 1 11 0 0x0 -1 "LO"»
+  «pin (500,-400) (-20,0) 1 11 0 0x0 -1 "LGND"»
+»
