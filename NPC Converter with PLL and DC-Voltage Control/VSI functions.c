@@ -134,3 +134,55 @@ void main()
 	DPWM60(A.out,B.out,C.out,&da,&db,&dc);
 /************** MODULATION **************/
 }
+
+#include <ap_fixed.h>
+#include <stdint.h>
+
+
+typedef ap_fixed<64, 32, AP_TRN, AP_SAT> fpoint;
+#define NULL  (fpoint)0.0
+#define ONE   (fpoint)1.0
+#define TWO   (fpoint)2.0
+#define THREE (fpoint)3.0
+
+#define SQRT3 (fpoint)1.7320508075688772
+
+#define NULL (fpoint)0.0
+#define PI (fpoint)3.14159
+#define W (fpoint)2*PI*(fpoint)50
+
+fpoint f_reset();
+void dpwm_vsi(bool sync, bool en, fpoint Tsamp, fpoint *angle)
+{
+	/* sync - PWM sampling,
+	 * en - enable the controller,
+	 */
+	#pragma HLS INTERFACE ap_ctrl_none port=return
+
+	#pragma HLS INTERFACE ap_none port=sync
+	#pragma HLS INTERFACE ap_none port=en
+	#pragma HLS INTERFACE ap_none port=Tsamp
+	#pragma HLS INTERFACE ap_none port=angle
+
+	static bool prev_sync;
+	fpoint angle_local;
+
+	if (en == 0)
+	{
+		angle_local = f_reset();
+	}
+
+	if(sync == 1 && prev_sync == 0)
+	{
+		if(angle_local >= TWO*PI)	{	angle_local = NULL;	} else
+						{	angle_local += W*Tsamp;		}
+	}
+	prev_sync = sync;
+	*angle = PI;
+}
+
+
+fpoint f_reset()
+{
+	return NULL;
+}
