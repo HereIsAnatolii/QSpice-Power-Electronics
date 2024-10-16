@@ -186,3 +186,145 @@ fpoint f_reset()
 {
 	return NULL;
 }
+
+#include <ap_fixed.h>
+#include <stdint.h>
+
+typedef ap_fixed<64, 32, AP_TRN, AP_SAT> fpoint;
+
+#define NULL  (fpoint)0.0
+#define ONE   (fpoint)1.0
+#define TWO   (fpoint)2.0
+#define THREE (fpoint)3.0
+
+#define SQRT3 (fpoint)1.7320508075688772
+
+#define NULL (fpoint)0.0
+#define PI (fpoint)3.14159
+#define W (fpoint)2*PI*(fpoint)50
+
+fpoint SIN,COS;
+
+fpoint f_reset();
+void maxmin(fpoint A, fpoint B, fpoint C, fpoint *maxx, fpoint *minn);
+void DPWM60(fpoint A, fpoint B, fpoint C, fpoint *da, fpoint *db, fpoint *dc);
+
+void DQ2AB(fpoint d, fpoint q, fpoint angle, fpoint *alpha, fpoint *beta);
+void AB2DQ(fpoint alpha, fpoint beta, fpoint angle, fpoint *d, fpoint *q);
+void DQ2ABC(fpoint d, fpoint q, fpoint angle, fpoint *A, fpoint *B, fpoint *C);
+
+void dpwm_vsi(fpoint d, fpoint q, fpoint sin, fpoint cos, bool en, bool sync, fpoint Tsamp, fpoint *angle, fpoint *A, fpoint *B, fpoint *C)
+{
+	/* sync - PWM sampling,
+	 * en - enable the controller,
+	 */
+	#pragma HLS INTERFACE ap_ctrl_none port=return
+
+	#pragma HLS INTERFACE ap_none port=d
+	#pragma HLS INTERFACE ap_none port=q
+	#pragma HLS INTERFACE ap_none port=sin
+	#pragma HLS INTERFACE ap_none port=cos
+	#pragma HLS INTERFACE ap_none port=sync
+	#pragma HLS INTERFACE ap_none port=en
+	#pragma HLS INTERFACE ap_none port=Tsamp
+	#pragma HLS INTERFACE ap_none port=angle
+	#pragma HLS INTERFACE ap_none port=A
+	#pragma HLS INTERFACE ap_none port=B
+	#pragma HLS INTERFACE ap_none port=C
+
+	static bool prev_sync;
+	fpoint angle_local, a,b,c;
+
+	if (en == 0)
+	{
+		angle_local = f_reset();
+		SIN = f_reset();
+		COS = f_reset();
+		*A = f_reset();
+		*B = f_reset();
+		*C = f_reset();
+	}
+
+	else if(sync == 1 && prev_sync == 0)
+	{
+		SIN = sin;
+		COS = cos;
+		if(angle_local >= TWO*PI)	{	angle_local = NULL;	} else
+						{	angle_local += W*Tsamp;		}
+
+		DQ2ABC(d,q,angle_local,&a,&b,&c);
+		DPWM60(a,b,c,A,B,C);
+	}
+
+	/******************** UPDATE OUTPUTS ********************/
+	prev_sync = sync;
+	*angle = angle_local;
+}
+
+
+fpoint f_reset()
+{
+	return NULL;
+}
+// CLARKE and INVERSE CLARKE transformations
+void ABC2AB(fpoint A, fpoint B, fpoint C, fpoint *alpha, fpoint *beta)
+{
+	*alpha = (TWO*A - B - C)/THREE;
+	*beta = (B-C)/SQRT3;
+}
+void AB2ABC(fpoint alpha, fpoint beta, fpoint *A, fpoint *B, fpoint *C)
+{
+	*A = alpha;
+	*B = (SQRT3*beta - alpha)/TWO;
+	*C =-(SQRT3*beta + alpha)/TWO;
+}
+
+// PARK and INVERSE PARK transformations
+void AB2DQ(fpoint alpha, fpoint beta, fpoint angle, fpoint *d, fpoint *q)
+{
+	*d = alpha*COS + beta*SIN;
+	*q =-alpha*SIN + beta*COS;
+}
+
+void DQ2AB(fpoint d, fpoint q, fpoint angle, fpoint *alpha, fpoint *beta)
+{
+	*alpha = d*COS - q*SIN;
+	*beta  = d*SIN + q*COS;
+}
+
+void ABC2DQ(fpoint A, fpoint B, fpoint C, fpoint angle, fpoint *d, fpoint *q)
+{
+	fpoint alpha, beta;
+
+	ABC2AB(A,B,C,&alpha,&beta);
+	AB2DQ(alpha,beta,angle,d,q);
+}
+
+void DQ2ABC(fpoint d, fpoint q, fpoint angle, fpoint *A, fpoint *B, fpoint *C)
+{
+	fpoint alpha, beta;
+
+	DQ2AB(d,q,angle,&alpha,&beta);
+	AB2ABC(alpha,beta,A,B,C);
+}
+void maxmin(fpoint A, fpoint B, fpoint C, fpoint *maxx, fpoint *minn)
+{
+	if(A>B&&A>C)	{*maxx = A;	} else
+	if(B>A&&B>C)	{*maxx = B;	} else
+						{*maxx = C;	}
+
+	if(A<B&&A<C)	{*minn = A;	} else
+	if(B<A&&B<C)	{*minn = B;	} else
+						{*minn = C;	}
+}
+void DPWM60(fpoint A, fpoint B, fpoint C, fpoint *da, fpoint *db, fpoint *dc)
+{
+	fpoint maxx,minn,offset;
+	// find max and min
+	maxmin(A,B,C,&maxx,&minn);
+	if(maxx+minn > NULL){		offset = (ONE + maxx);	} else
+						{		offset =-(ONE + minn);	}
+	*da = A+offset;
+	*db = B+offset;
+	*dc = C+offset;
+}
